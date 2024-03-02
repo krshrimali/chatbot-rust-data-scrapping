@@ -5,9 +5,10 @@ use std::path::Path;
 
 use soup::NodeExt;
 use soup::Soup;
-// use log::{debug, info, error, warn};
 
 use indicatif::ProgressBar;
+mod prompt_generator;
+use prompt_generator::{Dataset, PromptGenerator};
 
 pub fn extract_all_hyperlinks(
     raw_data: Result<String, std::io::Error>,
@@ -35,8 +36,6 @@ pub fn extract_all_hyperlinks(
                             return;
                         }
 
-                        // let final_link = main_html_link.parent().unwrap().join(href.clone());
-                        // log::info!("Final link: {:?}", final_link);
                         all_links.push(href);
                     }
                     None => log::warn!("No href attribute found"),
@@ -88,6 +87,7 @@ fn main() {
             pb.inc(1);
             continue;
         }
+
         let modified_link = Path::new(&main_html_link).parent().unwrap().join(link);
         let content = fetch_raw_html(modified_link.display().to_string());
         let success = extract_all_hyperlinks(content, &mut nested_links, &mut all_text);
@@ -118,9 +118,22 @@ fn main() {
 
     // write all_text to a single file
     let text_pb = ProgressBar::new(all_text.len() as u64);
-    let file_name = "output.txt";
-    for text in all_text.iter() {
+
+    std::fs::create_dir_all("output").expect("Failed to create the directory");
+
+    let mut p_generator = PromptGenerator::default();
+    p_generator = p_generator.init();
+
+    // <row -> prompt, answer>, <....>
+    let mut whole_dataset = Dataset::default();
+
+    for (idx, text) in all_text.iter().enumerate() {
+        let file_name = format!("output/output_{}.txt", idx);
         std::fs::write(file_name, text).expect("Failed to write the file");
+
+        let output_text = p_generator.generate_output(text);
+        let dataset = p_generator.process_output_text_into_dataset(output_text);
+        whole_dataset.extend(dataset);
         text_pb.inc(1);
     }
 }
