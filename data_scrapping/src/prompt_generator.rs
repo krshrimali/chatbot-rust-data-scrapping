@@ -1,5 +1,5 @@
 use openai_api_rust::chat::*;
-use openai_api_rust::*;
+use openai_api_rust::OpenAI;
 
 #[derive(Default)]
 pub struct PromptGenerator {
@@ -40,7 +40,7 @@ impl PromptGenerator {
             }],
         };
 
-        let result = self.openai_api.unwrap().chat_completion_create(&body);
+        let result = self.openai_api.as_ref().unwrap().chat_completion_create(&body);
 
         let choice = result.unwrap().choices;
         // FIXME: Untested code

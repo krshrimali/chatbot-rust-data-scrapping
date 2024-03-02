@@ -133,6 +133,7 @@ fn main() {
 
         let output_text = p_generator.generate_output(text);
         let dataset = p_generator.process_output_text_into_dataset(output_text);
+        // dataset format is: <prompt, answer>
         whole_dataset.extend(dataset);
         text_pb.inc(1);
     }
